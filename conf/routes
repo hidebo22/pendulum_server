@@ -1,0 +1,39 @@
+# Routes Config
+#
+# This file defines all application routes (Higher priority routes first)
+#
+
+module:testrunner
+# module:jobs
+
+GET     /:userID                                App.GetInitData
+GET     /register/:userID                       App.registerUser
+GET     /master/create                          Master.Create
+GET     /layout/test                            Master.CreateTestLayout
+GET     /layout/create                          Layout.Create
+GET     /layout/:layoutID                       Layout.Index
+POST    /layout/:layoutID/update                Layout.Update
+POST    /layout/:layoutID/insert                Layout.Insert
+POST    /layout/:layoutID/delete                Layout.Delete
+
+#Match
+GET     /match/room/:user                       Match.Room
+
+#Battle
+POST    /result/create/                         Result.Create
+GET     /result/:resultID                       Result.Index
+
+#Chat
+GET     /chat/room                              Chat.Room
+GET     /chat/room/messages                     Chat.WaitMessages
+POST    /chat/room/messages                     Chat.Say
+GET     /chat/room/leave                        Chat.Leave
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Map static resources from the /app/public folder to the /public path
+GET     /public/*filepath                       Static.Serve("public")
+
+# Catch all
+*       /:controller/:action                    :controller.:action

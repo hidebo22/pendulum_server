@@ -1,0 +1,93 @@
+package controllers
+
+import (
+	"log"
+
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/revel/revel"
+)
+
+type App struct {
+	*revel.Controller
+}
+
+type HomeObject struct {
+	Buildings []HomeBuilding
+}
+
+type HomeBuilding struct {
+	BuildingName  string
+	BuildingNo    int8
+	BuildingLevel int8
+	GridX         int16
+	GridY         int16
+}
+
+type Result struct {
+	User_id string
+}
+
+func (c App) Home(id string) revel.Result {
+	db := GormConnect()
+
+	var result []HomeBuilding
+	//db.Raw("SELECT building_name, building_no, building_level, grid_x, grid_y, size_x, size_y FROM t_user_buildings LEFT JOIN m_buildings ON building_name = name and building_level = level WHERE user_id = ?", id).Scan(&result)
+	db.Table("t_user_buildings").Select(
+		"building_name,	building_no, building_level, grid_x, grid_y").Joins(
+		"LEFT JOIN m_buildings ON (building_name = name AND building_level)").Where(
+		"user_id = ?", id).Order(
+		"building_name, building_no").Scan(&result)
+
+	defer db.Close()
+
+	var obj HomeObject
+	obj.Buildings = result
+	return c.RenderJSON(obj)
+}
+
+func (c App) Index() revel.Result {
+	return c.Render()
+	// user := models.User{Name: "Jinzhup"}
+	// c.Txn.NewRecord(user)
+	// c.Txn.Create(&user)
+	// return c.RenderJSON(user)
+
+	// // たとえばリクエストのヘダーからトークン文字列を受け取ったとする
+	// tokenstring := createTokenString()
+	// // サーバだけが知り得るSecretでこれをParseする
+	// token, err := jwt.Parse(tokenstring, func(token *jwt.Token) (interface{}, error) {
+	// 	return []byte("foobar"), nil
+	// })
+	// // Parseメソッドを使うと、Claimsはmapとして得られる
+	// log.Println(token.Claims, err)
+
+	// 別例, jwt.StandardClaimsを満たすstructに直接decodeさせることもできる
+	// user := JwtUser{}
+	// token, err = jwt.ParseWithClaims(tokenstring, &user, func(token *jwt.Token) (interface{}, error) {
+	// 	return []byte("foobar"), nil
+	// })
+	// log.Println(token.Valid, user, err)
+
+	//return c.RenderJSON(tokenstring)
+	//return c.RenderJSON(token.Claims)
+}
+
+type JwtUser struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+	jwt.StandardClaims
+}
+
+func createTokenString() string {
+	// User情報をtokenに込める
+	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), &JwtUser{
+		Name: "otiai10",
+		Age:  30,
+	})
+	// Secretで文字列にする. このSecretはサーバだけが知っている
+	tokenstring, err := token.SignedString([]byte("foobar"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return tokenstring
+}

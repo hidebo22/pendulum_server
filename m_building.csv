@@ -1,0 +1,5 @@
+ID,Name,Level,Hp,Damage,AttackInterval,AttackRange,ProjectileSpeed
+001,mothership,1,2000,,,,
+101,cannon,1,500,35,3,10,1
+102,cannon,2,550,40,3,10,1
+201,sniper,1,500,35,4,8,1

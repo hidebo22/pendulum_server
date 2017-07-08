@@ -1,0 +1,5 @@
+ID,Name,Level,IsUp,Damage,AttackInterval,AttackRange,ProjectileSpeed
+001,rush,1,false,50,,,
+101,shot,1,false,35,,,
+10001,jump,1,true,,,,
+10101,highJump,1,true,,,,

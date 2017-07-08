@@ -1,0 +1,92 @@
+package controllers
+
+import (
+	"github.com/BurntSushi/toml"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jinzhu/gorm"
+
+	// short name for revel
+	r "github.com/revel/revel"
+	// YOUR APP NAME
+	"Pendulum/app/models"
+	"database/sql"
+)
+
+// type: revel controller with `*gorm.DB`
+// c.Txn will keep `Gdb *gorm.DB`
+type GormController struct {
+	*r.Controller
+	Txn *gorm.DB
+}
+
+type Config struct {
+	Mysql MysqlConfig
+}
+
+type MysqlConfig struct {
+	User     string
+	Pass     string
+	Host     string
+	Database string
+}
+
+var Gdb *gorm.DB
+
+// init db
+func InitDB() {
+	//var err error
+	// open db
+	var config Config
+	_, err := toml.DecodeFile("C:/Go/Projects/src/Pendulum/config.toml", &config)
+	if err != nil {
+		panic(err)
+	}
+	dbconf := config.Mysql.User + ":" + config.Mysql.Pass + "@tcp(" + config.Mysql.Host + ":3306)/" + config.Mysql.Database
+
+	Gdb, err = gorm.Open("mysql", dbconf)
+	if err != nil {
+		r.ERROR.Println("FATAL", err)
+		panic(err)
+	}
+	Gdb.AutoMigrate(&models.User{})
+	// uniquie index if need
+	//Gdb.Model(&models.User{}).AddUniqueIndex("idx_user_name", "name")
+}
+
+// transactions
+
+// This method fills the c.Txn before each transaction
+func (c *GormController) Begin() r.Result {
+	txn := Gdb.Begin()
+	if txn.Error != nil {
+		panic(txn.Error)
+	}
+	c.Txn = txn
+	return nil
+}
+
+// This method clears the c.Txn after each transaction
+func (c *GormController) Commit() r.Result {
+	if c.Txn == nil {
+		return nil
+	}
+	c.Txn.Commit()
+	if err := c.Txn.Error; err != nil && err != sql.ErrTxDone {
+		panic(err)
+	}
+	c.Txn = nil
+	return nil
+}
+
+// This method clears the c.Txn after each transaction, too
+func (c *GormController) Rollback() r.Result {
+	if c.Txn == nil {
+		return nil
+	}
+	c.Txn.Rollback()
+	if err := c.Txn.Error; err != nil && err != sql.ErrTxDone {
+		panic(err)
+	}
+	c.Txn = nil
+	return nil
+}
